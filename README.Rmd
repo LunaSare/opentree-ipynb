@@ -1,1 +1,41 @@
-# Developping stuff for the Open Tree of Life platform
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit THIS file -->
+
+<!-- We might not even need the Rmd, but let's see how it goes-->
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  results = "asis",
+  echo = FALSE,
+  comment = "#>",
+  fig.path = "mds/figures/README-",
+  out.width = "100%"
+)
+```
+# Developing stuff for the Open Tree of Life platform
+
+An open lab notebook for software development.
+
+## How to use it.
+
+First, you will need to install jupyter notebooks. Follow some installation instructions [here](mds/install-jupnot.md)
+
+
+Next, clone the opentre-ipynb Github repo into your computer with
+
+`git clone git@github.com:LunaSare/opentree-ipynb.git`
+
+Then:
+
+Option 1. Open jupyter notebooks and navigate to the folder of the repo.
+
+Option 2. Open a terminal and change directory to the folder of the repo.
+
+do `jupyter notebook` and _voilà_, this will launch the notebooks here on a jupyter notebook environment so you can test them by yourself  
+
+
