@@ -1,6 +1,14 @@
 *Rproj
-./ott3.1.tgz
+.Rhistory
+ott3.1.tgz
 ./.git/objects/9f/85daa314a6a29485b35181487c550a82b8a6e8
-./ott3.1.tsv
+ott3.1.tsv
 data-raw/.
 .Rproj.user
+py/*.tgz
+py/ott3.1/
+cit*.txt
+ipynb/cit*.t*xt
+ipynb/test*cit*.t*xt
+ipynb/.DS_Store
+ipynb/.ipynb_checkpoints/
