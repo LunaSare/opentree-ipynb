@@ -70,3 +70,71 @@ def get_tree(rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True, label_fo
     # tre = get_citations_from_json.get_tree_from_synth(ott_ids, citation = 'citations_' + rank + '.txt')
     tre = opentree_helpers.get_tree_from_synth(ott_ids, label_format = label_format, citation = "citations_" + rank + ".txt")
     return tre
+
+
+import json
+import requests
+def get_tree_from_synth(ott_ids, label_format="name", citation="cites.txt", tree_type = "subtree"):
+    assert label_format in ['id', 'name', 'name_and_id']
+    assert tree_type in ['subtree', 'induced_subtree']
+    if 'subtree' in tree_type:
+        ott_ids = ott_ids[0] # take only first element of ott_ids if it is a list of multiple items
+    url = 'https://api.opentreeoflife.org/v3/tree_of_life/' + tree_type
+    headers = {'content-type':'application/json'}
+    pass_number = 0
+    while pass_number <= 1:
+        if 'subtree' in tree_type:
+            payload = json.dumps(dict(ott_id=ott_ids, label_format = label_format))
+        else:
+            payload = json.dumps(dict(ott_ids=ott_ids, label_format = label_format))
+        res = requests.post(url, data=payload, headers=headers)
+        if res.status_code == 200:
+            pass_number += 2
+            break
+        else:
+            pass_number += 1
+            if 'unknown' in res.json():
+                bad_ids = res.json()['unknown'].keys()
+                ott_ids = set(ott_ids)
+                for bad_ott_id in bad_ids:
+                    num = bad_ott_id.strip("ott")
+                    ott_ids.remove(num)
+                ott_ids = list(ott_ids)
+        if pass_number == 2:
+            sys.stderr.write("error getting synth tree, {}, {}, {}, (full error ottids hidden)\n".format(res.status_code, res.reason, res.json().get('message'), res.json()))
+            return None
+    synth_json = res.json()
+    tre = Tree.get(data=synth_json['newick'],
+                   schema="newick",
+                   suppress_internal_node_taxa=True)
+    assert 'supporting_studies' in synth_json.keys(), synth_json.keys()
+    opentree_helpers.get_citations_from_json(synth_json, citation)
+    tre.suppress_unifurcations()
+    return tre
+
+from Bio import Phylo
+def get_ott_ids_for_group(group):
+    subtree = get_tree_from_synth(ott_ids = group, label_format="name_and_id", citation="cites.txt", tree_type = "subtree")
+    newick = str(subtree)
+    # get ott ids from newick
+
+    ott_ids = list(ott_ids)
+    return ott_ids
+
+    # taxonomy_tsv = taxonomy_file
+    # # clean taxonomy file
+    # if clean:
+    #     clean_taxonomy_file(taxonomy_file)
+    #     taxonomy_tsv = "taxonomy_clean.tsv"
+    # # extract ott ids from taxonomy reduced file
+    # sys.stdout.write("Gathering ott ids from {}...\n".format(rank))
+    # fi = open(taxonomy_tsv).readlines()
+    # ott_ids = []
+    # for lin in fi:
+    #     # lii = re.split('\t*', lin)
+    #     lii = re.split('\t*\|\t*', lin)
+    #     if re.match('[0-9]', lii[0]):
+    #         if len(lii) > 2:
+    #             if re.match(rank, lii[3]):
+    #                 ott_ids.append(lii[0])
+    #                 sys.stdout.write(".")
