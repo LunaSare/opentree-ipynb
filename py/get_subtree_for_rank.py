@@ -65,8 +65,8 @@ def get_ott_ids_for_rank(rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = Tr
     return ott_ids
 
 
-def get_tree(rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True):
+def get_tree(rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True, label_format="name"):
     ott_ids = get_ott_ids_for_rank(rank, taxonomy_file, clean = clean)
     # tre = get_citations_from_json.get_tree_from_synth(ott_ids, citation = 'citations_' + rank + '.txt')
-    tre = opentree_helpers.get_tree_from_synth(ott_ids, citation = "citations_" + rank + ".txt")
+    tre = opentree_helpers.get_tree_from_synth(ott_ids, label_format = label_format, citation = "citations_" + rank + ".txt")
     return tre
