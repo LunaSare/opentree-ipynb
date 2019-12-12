@@ -36,14 +36,14 @@ def download_taxonomy_file(version = '3.1'):
     with gzip.open('ott' + version + '.tgz', 'rb') as fin:
         with open('ott' + version + '.tsv', 'wb') as fout:
             shutil.copyfileobj(fin, fout)
+
 def clean_taxonomy_file(taxonomy_file = 'ott3.1/taxonomy.tsv'):
     sys.stdout.write("Cleaning {} file...\n".format(taxonomy_file))
-    # clean taxonomy file
+    # clean taxonomy file, writes cleaned file to taxonomy_clean.tsv
     os.system('grep -a -v "major_rank_conflict" ' + taxonomy_file + ' | egrep -a -v "Incertae" | egrep -a -v "incertae" | egrep -a -v "uncultured" | egrep -a -v "barren" | egrep -a -v "extinct" | egrep -a -v "unplaced" | egrep -a -v "hidden" | egrep -a -v "inconsistent" | egrep -a -v "synonym" > taxonomy_clean.tsv')
 
 
-def get_ott_ids_for_rank(rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = TRUE):
-    sys.stdout.write("Cleaning {} file...\n".format(taxonomy_file))
+def get_ott_ids_for_rank(rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True):
     taxonomy_tsv = taxonomy_file
     # clean taxonomy file
     if clean:
@@ -57,14 +57,16 @@ def get_ott_ids_for_rank(rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = TR
         # lii = re.split('\t*', lin)
         lii = re.split('\t*\|\t*', lin)
         if re.match('[0-9]', lii[0]):
-            if re.match(rank, lii[3]):
-                ott_ids.append(lii[0])
+            if len(lii) > 2:
+                if re.match(rank, lii[3]):
+                    ott_ids.append(lii[0])
+                    sys.stdout.write(".")
     ott_ids = list(ott_ids)
     return ott_ids
 
 
-def get_tree(rank, taxonomy_file = 'ott3.1/taxonomy.tsv'):
-    ott_ids = get_ott_ids_for_rank(rank, taxonomy_file)
+def get_tree(rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True):
+    ott_ids = get_ott_ids_for_rank(rank, taxonomy_file, clean = clean)
     # tre = get_citations_from_json.get_tree_from_synth(ott_ids, citation = 'citations_' + rank + '.txt')
     tre = opentree_helpers.get_tree_from_synth(ott_ids, citation = "citations_" + rank + ".txt")
     return tre

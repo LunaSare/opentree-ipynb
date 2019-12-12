@@ -5,4 +5,4 @@ import sys
 get_subtree_for_rank.download_taxonomy_file()
 get_subtree_for_rank.get_tree(rank = "family", taxonomy_file = 'replace by path and name of tsv file')
 get_subtree_for_rank.get_tree(rank = "family", taxonomy_file = '../ott3.1.tsv')
-get_subtree_for_rank.get_tree(rank = "family", taxonomy_file = 'taxonomy_clean.tsv', clean = FALSE)
+get_subtree_for_rank.get_tree(rank = "family", taxonomy_file = 'taxonomy_clean.tsv', clean = False)
