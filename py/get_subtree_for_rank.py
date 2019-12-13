@@ -101,7 +101,7 @@ def get_tree_from_synth(ott_ids, label_format="name", citation="cites.txt", tree
                     ott_ids.remove(num)
                 ott_ids = list(ott_ids)
         if pass_number == 2:
-            sys.stderr.write("error getting synth tree, {}, {}, {}, (full error ottids hidden)\n".format(res.status_code, res.reason, res.json().get('message'), res.json()))
+            sys.stderr.write("error getting synth tree, {}, {}, {}, (full error ott ids hidden)\n".format(res.status_code, res.reason, res.json().get('message'), res.json()))
             return None
     synth_json = res.json()
     tre = Tree.get(data=synth_json['newick'],
@@ -113,28 +113,25 @@ def get_tree_from_synth(ott_ids, label_format="name", citation="cites.txt", tree
     return tre
 
 from Bio import Phylo
-def get_ott_ids_for_group(group):
-    subtree = get_tree_from_synth(ott_ids = group, label_format="name_and_id", citation="cites.txt", tree_type = "subtree")
+def get_ott_ids_for_group(group_ott_id):
+    subtree = get_tree_from_synth(ott_ids = group_ott_id, label_format="name_and_id", citation="cites.txt", tree_type = "subtree")
     newick = str(subtree)
     # get ott ids from newick
-
-    ott_ids = list(ott_ids)
+    ott_ids0 = re.findall(r'ott\d+', newick)
+    ott_ids = []
+    for i in ott_ids0:
+        ott_ids.append(re.findall(r'\d+', i))
     return ott_ids
 
-    # taxonomy_tsv = taxonomy_file
-    # # clean taxonomy file
-    # if clean:
-    #     clean_taxonomy_file(taxonomy_file)
-    #     taxonomy_tsv = "taxonomy_clean.tsv"
-    # # extract ott ids from taxonomy reduced file
-    # sys.stdout.write("Gathering ott ids from {}...\n".format(rank))
-    # fi = open(taxonomy_tsv).readlines()
-    # ott_ids = []
-    # for lin in fi:
-    #     # lii = re.split('\t*', lin)
-    #     lii = re.split('\t*\|\t*', lin)
-    #     if re.match('[0-9]', lii[0]):
-    #         if len(lii) > 2:
-    #             if re.match(rank, lii[3]):
-    #                 ott_ids.append(lii[0])
-    #                 sys.stdout.write(".")
+def get_ott_ids_for_rank_and_group(rank, group, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True):
+    # get group ott ids
+    group_ott_ids = get_ott_ids_for_group(group)
+    # clean taxonomy file
+    taxonomy_tsv = taxonomy_file
+    if clean:
+        clean_taxonomy_file(taxonomy_file)
+        taxonomy_tsv = "taxonomy_clean.tsv"
+    # subset taxonomy file by group_ott_ids and write to taxonomy_group.tsv
+
+    # get ott ids fro rank on that file
+    ott_ids = get_ott_ids_for_rank(rank, taxonomy_file = 'taxonomy_group.tsv', clean = False)
