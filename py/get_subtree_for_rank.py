@@ -37,10 +37,11 @@ def download_taxonomy_file(version = '3.1'):
         with open('ott' + version + '.tsv', 'wb') as fout:
             shutil.copyfileobj(fin, fout)
 
+# the function cleans up the word 'species' and the flag 'no rank - terminal', which is not associated to higher taxonomic ranks
 def clean_taxonomy_file(taxonomy_file = 'ott3.1/taxonomy.tsv'):
     sys.stdout.write('Cleaning {} file... '.format(taxonomy_file))
     # clean taxonomy file, writes cleaned file to taxonomy_clean.tsv
-    os.system('grep -a -v "major_rank_conflict" ' + taxonomy_file + ' | egrep -a -v "Incertae" | egrep -a -v "incertae" | egrep -a -v "uncultured" | egrep -a -v "barren" | egrep -a -v "extinct" | egrep -a -v "unplaced" | egrep -a -v "hidden" | egrep -a -v "inconsistent" | egrep -a -v "synonym" > taxonomy_clean.tsv')
+    os.system('grep -a -v "major_rank_conflict" ' + taxonomy_file + ' | egrep -a -v "species" | egrep -a -v "varietas" | egrep -a -v "no rank" | egrep -a -v "Incertae" | egrep -a -v "incertae" | egrep -a -v "uncultured" | egrep -a -v "barren" | egrep -a -v "extinct" | egrep -a -v "unplaced" | egrep -a -v "hidden" | egrep -a -v "inconsistent" | egrep -a -v "synonym" > taxonomy_clean.tsv')
     sys.stdout.write("Done.\n")
 
 
@@ -168,4 +169,33 @@ def get_ott_ids_group_and_rank(group_ott_id = None, group_ott_ids_file = None, r
     #                     ott_ids.append(lii[0])
     #                     sys.stdout.write(".")
     # ott_ids = list(ott_ids)
+    return ott_ids
+
+#accepts several ranks at the same time
+def get_ott_ids_X(group_ott_id = None, group_ott_ids_file = None, rank = "family", taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True):
+    taxonomy_tsv = taxonomy_file
+    # clean taxonomy file
+    if clean:
+        clean_taxonomy_file(taxonomy_file)
+        taxonomy_tsv = 'taxonomy_clean.tsv'
+    # extract ott ids from taxonomy reduced file
+    if isinstance(group_ott_ids_file, str):
+        sys.stdout.write('Getting ott ids from file {}...\n'.format(group_ott_ids_file))
+        children_ott_ids = [line.rstrip('\n') for line in open(group_ott_ids_file)]
+    else:
+        children_ott_ids = get_ott_ids_for_group(group_ott_id)
+    sys.stdout.write('Gathering ott ids from {}...\n'.format(rank))
+    fi = open(taxonomy_tsv).readlines()
+    ott_ids = []
+    # debug(len(children_ott_ids))
+    for line in fi:
+        lii = re.split('\t*\|\t*', line)
+        if re.match('[0-9]', lii[0]): # skips the headers and other weird lines
+            if len(lii) > 2:
+                if lii[0] in children_ott_ids:
+                    debug(lii[3])
+                    # if re.match(rank, lii[3]):
+                    if lii[3] in rank:
+                        ott_ids.append(lii[0])
+    ott_ids = list(ott_ids)
     return ott_ids
