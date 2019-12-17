@@ -38,9 +38,10 @@ def download_taxonomy_file(version = '3.1'):
             shutil.copyfileobj(fin, fout)
 
 def clean_taxonomy_file(taxonomy_file = 'ott3.1/taxonomy.tsv'):
-    sys.stdout.write("Cleaning {} file...\n".format(taxonomy_file))
+    sys.stdout.write('Cleaning {} file... '.format(taxonomy_file))
     # clean taxonomy file, writes cleaned file to taxonomy_clean.tsv
     os.system('grep -a -v "major_rank_conflict" ' + taxonomy_file + ' | egrep -a -v "Incertae" | egrep -a -v "incertae" | egrep -a -v "uncultured" | egrep -a -v "barren" | egrep -a -v "extinct" | egrep -a -v "unplaced" | egrep -a -v "hidden" | egrep -a -v "inconsistent" | egrep -a -v "synonym" > taxonomy_clean.tsv')
+    sys.stdout.write("Done.\n")
 
 
 def get_ott_ids_for_rank(rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True):
@@ -48,9 +49,9 @@ def get_ott_ids_for_rank(rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = Tr
     # clean taxonomy file
     if clean:
         clean_taxonomy_file(taxonomy_file)
-        taxonomy_tsv = "taxonomy_clean.tsv"
+        taxonomy_tsv = 'taxonomy_clean.tsv'
     # extract ott ids from taxonomy reduced file
-    sys.stdout.write("Gathering ott ids from {}...\n".format(rank))
+    sys.stdout.write('Gathering ott ids from {}...\n'.format(rank))
     fi = open(taxonomy_tsv).readlines()
     ott_ids = []
     for lin in fi:
@@ -65,20 +66,21 @@ def get_ott_ids_for_rank(rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = Tr
     return ott_ids
 
 
-def get_tree(rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True, label_format="name"):
+def get_tree(rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True, label_format='name'):
     ott_ids = get_ott_ids_for_rank(rank, taxonomy_file, clean = clean)
     # tre = get_citations_from_json.get_tree_from_synth(ott_ids, citation = 'citations_' + rank + '.txt')
-    tre = opentree_helpers.get_tree_from_synth(ott_ids, label_format = label_format, citation = "citations_" + rank + ".txt")
+    tre = opentree_helpers.get_tree_from_synth(ott_ids, label_format = label_format, citation = 'citations_' + rank + '.txt')
     return tre
 
 
 import json
 import requests
-def get_tree_from_synth(ott_ids, label_format="name", citation="cites.txt", tree_type = "subtree"):
+def get_tree_from_synth(ott_ids, label_format='name', citation='cites.txt', tree_type = 'subtree'):
     assert label_format in ['id', 'name', 'name_and_id']
     assert tree_type in ['subtree', 'induced_subtree']
+    assert isinstance(ott_ids, list) # if it is a string it is very hard to know how to delimit ott ids
     if 'subtree' in tree_type:
-        ott_ids = ott_ids[0] # take only first element of ott_ids if it is a list of multiple items
+            ott_ids = ott_ids[0] # take only first element of ott_ids if it is a list of multiple items
     url = 'https://api.opentreeoflife.org/v3/tree_of_life/' + tree_type
     headers = {'content-type':'application/json'}
     pass_number = 0
@@ -97,15 +99,15 @@ def get_tree_from_synth(ott_ids, label_format="name", citation="cites.txt", tree
                 bad_ids = res.json()['unknown'].keys()
                 ott_ids = set(ott_ids)
                 for bad_ott_id in bad_ids:
-                    num = bad_ott_id.strip("ott")
+                    num = bad_ott_id.strip('ott')
                     ott_ids.remove(num)
                 ott_ids = list(ott_ids)
         if pass_number == 2:
-            sys.stderr.write("error getting synth tree, {}, {}, {}, (full error ott ids hidden)\n".format(res.status_code, res.reason, res.json().get('message'), res.json()))
+            sys.stderr.write('Error getting synth tree, {}, {}, {}, (full error ott ids hidden)\n'.format(res.status_code, res.reason, res.json().get('message'), res.json()))
             return None
     synth_json = res.json()
     tre = Tree.get(data=synth_json['newick'],
-                   schema="newick",
+                   schema='newick',
                    suppress_internal_node_taxa=True)
     assert 'supporting_studies' in synth_json.keys(), synth_json.keys()
     opentree_helpers.get_citations_from_json(synth_json, citation)
@@ -113,25 +115,53 @@ def get_tree_from_synth(ott_ids, label_format="name", citation="cites.txt", tree
     return tre
 
 from Bio import Phylo
-def get_ott_ids_for_group(group_ott_id):
-    subtree = get_tree_from_synth(ott_ids = group_ott_id, label_format="name_and_id", citation="cites.txt", tree_type = "subtree")
+def get_ott_ids_for_group(group_ott_id, write_file):
+    sys.stdout.write('Gathering ott ids from group with ott id {}...\n'.format(group_ott_id[0]))
+    debug(group_ott_id)
+    subtree = get_tree_from_synth(ott_ids = group_ott_id, label_format='name_and_id', citation='cites.txt', tree_type = 'subtree')
     newick = str(subtree)
     # get ott ids from newick
     ott_ids0 = re.findall(r'ott\d+', newick)
     ott_ids = []
-    for i in ott_ids0:
-        ott_ids.append(re.findall(r'\d+', i))
+    for item in ott_ids0:
+        ott_ids.append(re.findall(r'\d+', item))
+    ott_ids = [item for sublist in ott_ids for item in sublist] # flattens the list
+    if isinstance(write_file, str):
+        ott_id_file = write_file
+    else:
+        ott_id_file = 'children_ott_ids.txt'
+    with open(ott_id_file, 'w') as f:
+        for item in ott_ids:
+            print >> f, item
     return ott_ids
 
-def get_ott_ids_for_rank_and_group(rank, group, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True):
-    # get group ott ids
-    group_ott_ids = get_ott_ids_for_group(group)
+def get_ott_ids_for_group_and_rank(group_ott_id, rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True):
     # clean taxonomy file
     taxonomy_tsv = taxonomy_file
     if clean:
         clean_taxonomy_file(taxonomy_file)
-        taxonomy_tsv = "taxonomy_clean.tsv"
-    # subset taxonomy file by group_ott_ids and write to taxonomy_group.tsv
-
-    # get ott ids fro rank on that file
-    ott_ids = get_ott_ids_for_rank(rank, taxonomy_file = 'taxonomy_group.tsv', clean = False)
+        taxonomy_tsv = 'taxonomy_clean.tsv'
+    # get group ott ids
+    children_ott_ids = get_ott_ids_for_group(group_ott_id)
+    # get rank ott ids
+    rank_ott_ids = get_ott_ids_for_rank(rank, taxonomy_tsv, clean)
+    # get rank ott ids that are in children ott ids:
+    ott_ids = []
+    for item in children_ott_ids:
+        if item in rank_ott_ids:
+            ott_ids.append(item)
+    # alternatively: subset taxonomy file by group_ott_ids and write to taxonomy_group.tsv:
+    # tried it, but it is REALLYYYY slow
+    # os.system('grep -Fwf children_ott_ids.txt ' + taxonomy_tsv + ' > taxonomy_clean_group.tsv')
+    # fi = open(taxonomy_tsv).readlines()
+    # ott_ids = []
+    # for lin in fi:
+    #     lii = re.split('\t*\|\t*', lin)
+    #     if re.match('[0-9]', lii[0]):
+    #         if len(lii) > 2:
+    #             if re.match(lii[0], ): # filter children ott ids
+    #                 if re.match(rank, lii[3]): # filter rank
+    #                     ott_ids.append(lii[0])
+    #                     sys.stdout.write(".")
+    # ott_ids = list(ott_ids)
+    return ott_ids
