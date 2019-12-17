@@ -135,14 +135,18 @@ def get_ott_ids_for_group(group_ott_id, write_file):
             print >> f, item
     return ott_ids
 
-def get_ott_ids_for_group_and_rank(group_ott_id, rank, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True):
+def get_ott_ids_group_and_rank(group_ott_id = None, group_ott_ids_file = None, rank = None, rank_ott_ids_file = None, taxonomy_file = 'ott3.1/taxonomy.tsv', clean = True):
     # clean taxonomy file
     taxonomy_tsv = taxonomy_file
     if clean:
         clean_taxonomy_file(taxonomy_file)
         taxonomy_tsv = 'taxonomy_clean.tsv'
     # get group ott ids
-    children_ott_ids = get_ott_ids_for_group(group_ott_id)
+    if isinstance(group_ott_ids_file, str):
+        sys.stdout.write('Getting ott ids from file {}...\n'.format(group_ott_ids_file))
+        children_ott_ids = [line.rstrip('\n') for line in open(group_ott_ids_file)]
+    else:
+        children_ott_ids = get_ott_ids_for_group(group_ott_id)
     # get rank ott ids
     rank_ott_ids = get_ott_ids_for_rank(rank, taxonomy_tsv, clean)
     # get rank ott ids that are in children ott ids:
@@ -151,7 +155,7 @@ def get_ott_ids_for_group_and_rank(group_ott_id, rank, taxonomy_file = 'ott3.1/t
         if item in rank_ott_ids:
             ott_ids.append(item)
     # alternatively: subset taxonomy file by group_ott_ids and write to taxonomy_group.tsv:
-    # tried it, but it is REALLYYYY slow
+    # tried it, but it is REALLYYYY slow (it seems following line is not working as expected)
     # os.system('grep -Fwf children_ott_ids.txt ' + taxonomy_tsv + ' > taxonomy_clean_group.tsv')
     # fi = open(taxonomy_tsv).readlines()
     # ott_ids = []
