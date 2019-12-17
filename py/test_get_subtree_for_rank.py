@@ -30,7 +30,12 @@ amph_gen = get_subtree_for_rank.get_ott_ids_group_and_rank(group_ott_id = ['5445
 len(amph_gen) # 386
 amph_fam = get_subtree_for_rank.get_ott_ids_group_and_rank(group_ott_id = ['544595'], group_ott_ids_file = 'children_amphibia.txt', rank = "family", taxonomy_file = 'taxonomy_clean.tsv', clean = False)
 
-amph_fam = get_subtree_for_rank.get_ott_ids_X(group_ott_ids_file = 'children_amphibia.txt', rank = "family", taxonomy_file = 'taxonomy_clean.tsv', clean = False)
+amph_fam = get_subtree_for_rank.get_ott_ids_X(group_ott_ids_file = 'children_amphibia.txt', rank = ["superfamily", "family", "subfamily"], taxonomy_file = 'taxonomy_clean.tsv', clean = False)
+amph_fam = get_subtree_for_rank.get_ott_ids_X(group_ott_id = ['544595'], rank = ["superfamily", "family", "subfamily"], taxonomy_file = 'taxonomy_clean.tsv', clean = False)
+
+tree = get_subtree_for_rank.get_tree(group_ott_id = ['544595'], rank = "family", taxonomy_file = 'taxonomy_clean.tsv', clean = False)
+tree = get_subtree_for_rank.get_tree(group_ott_ids_file = 'children_amphibia.txt', rank = "family", taxonomy_file = 'taxonomy_clean.tsv', clean = False)
+
 
 from Bio import Phylo
 Phylo.read(tree)
